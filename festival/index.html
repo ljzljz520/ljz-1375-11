@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>文化站 · 节庆路线与年历</title>
+<link rel="stylesheet" href="css/festival.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="seal">站</span>
+    <div><h1>节庆路线与年历</h1><small>西安文化站 · 仪式节点 / 交通换乘 / 公告发布</small></div>
+  </div>
+  <nav class="tabs">
+    <button data-view="visitor" class="tab active">访客年历</button>
+    <button data-view="editor" class="tab">编辑工作台</button>
+    <button data-view="admin" class="tab">审核发布</button>
+  </nav>
+</header>
+
+<!-- ============ VISITOR ============ -->
+<main id="view-visitor" class="view active">
+  <section class="panel">
+    <form id="filter-form" class="filters">
+      <label>年份
+        <select name="year" id="f-year"><option>2026</option><option selected>2027</option><option>2028</option></select>
+      </label>
+      <label>类型
+        <select name="kind"><option value="">全部</option><option>ceremony</option>
+          <option>transfer</option><option>entrance</option></select>
+      </label>
+      <label>关键词<input name="q" placeholder="如：灯会 / 社火"></label>
+      <label class="chk"><input type="checkbox" name="only_confirmed" value="1">仅看已确认/已发布</label>
+      <label>展示
+        <select name="view"><option value="list">列表</option><option value="map">地图</option></select>
+      </label>
+      <button type="submit">筛选</button>
+      <a id="deep-link" class="deeplink" href="#">复制深链</a>
+      <span id="cache-badge" class="badge">已发布版</span>
+    </form>
+  </section>
+
+  <section id="visitor-list" class="panel list-mode"></section>
+  <section id="visitor-map" class="panel map-mode" hidden>
+    <svg id="map-svg" viewBox="0 0 800 420" role="img" aria-label="节点与连线示意图"></svg>
+    <p class="hint">示意图：按经纬度相对位置绘制，不替代官方地图；可随时切回列表。</p>
+  </section>
+
+  <section class="panel">
+    <h2>路线可行性</h2>
+    <form id="route-form" class="filters">
+      <label>起点<input name="origin" value="east-gate"></label>
+      <label>终点<input name="dest" value="city-wall"></label>
+      <label>出发时间<input name="start" value="2027-02-20T16:30"></label>
+      <label>偏好
+        <select name="pref"><option value="">最早到达</option>
+          <option value="notransfer">零换乘</option>
+          <option value="noshuttle">不乘摆渡车</option></select>
+      </label>
+      <button>比较路径</button>
+    </form>
+    <div id="route-out"></div>
+  </section>
+
+  <section class="panel" id="stories">
+    <h2>历史叙事（已发布）</h2>
+    <div id="article-list"></div>
+  </section>
+</main>
+
+<!-- ============ EDITOR ============ -->
+<main id="view-editor" class="view" hidden>
+  <div class="editor-grid">
+    <section class="panel">
+      <h2>仪式节点 / 换乘点</h2>
+      <form id="node-form" class="stack">
+        <input name="slug" placeholder="slug，如 drum-tower" required>
+        <input name="name" placeholder="名称" required>
+        <select name="kind"><option value="ceremony">仪式节点</option>
+          <option value="transfer">交通换乘</option><option value="entrance">入口</option>
+          <option value="exit">出口</option></select>
+        <div class="row"><input name="lat" placeholder="纬度"><input name="lng" placeholder="经度"></div>
+        <textarea name="windows" rows="3" placeholder='开放窗口JSON: [{"start_local":"2027-..T09:00","end_local":"2027-..T22:00","tz":"Asia/Shanghai"}]（跨午夜写次日日期）'></textarea>
+        <button>新增节点</button>
+      </form>
+      <ul id="node-list" class="edlist"></ul>
+    </section>
+
+    <section class="panel">
+      <h2>有向连线（移动耗时 + 开放窗口）</h2>
+      <form id="edge-form" class="stack">
+        <input name="slug" placeholder="连线 slug" required>
+        <input name="name" placeholder="名称" required>
+        <div class="row"><input name="from_slug" placeholder="起点节点slug" required>
+          <input name="to_slug" placeholder="终点节点slug" required></div>
+        <div class="row"><input name="travel_seconds" type="number" placeholder="耗时秒" required>
+          <select name="mode"><option>walk</option><option>bus</option><option>metro</option>
+            <option>shuttle</option><option>ferry</option></select></div>
+        <textarea name="windows" rows="2" placeholder='窗口JSON，可留空 []'></textarea>
+        <button>新增连线</button>
+      </form>
+      <ul id="edge-list" class="edlist"></ul>
+      <p class="hint">改连线两端会带 <code>If-Match</code> 版本号；两人同时改，后保存者收到 409 并需刷新后重试。</p>
+    </section>
+
+    <section class="panel">
+      <h2>周期规则（只能提案，不复制旧日期）</h2>
+      <form id="rule-form" class="stack">
+        <input name="slug" placeholder="规则 slug，如 mid-autumn" required>
+        <input name="title" placeholder="节庆名称" required>
+        <textarea name="expression" rows="2" placeholder='原始表达: {"calendar":"lunar","month":8,"day":15,"raw":"农历八月十五"}'></textarea>
+        <button>建立周期规则</button>
+      </form>
+      <ul id="rule-list" class="edlist"></ul>
+    </section>
+
+    <section class="panel">
+      <h2>组织方公告（来源确认日期）</h2>
+      <form id="ann-form" class="stack">
+        <input name="external_ref" placeholder="公告编号（幂等键）">
+        <input name="title" placeholder="公告标题" required>
+        <input name="announced_at" placeholder="公告时间 2027-01-10T09:00" required>
+        <input name="source_url" placeholder="来源URL">
+        <textarea name="occurrences" rows="4" placeholder='活动场次JSON: [{"slug":"lantern-festival-2028","rule_slug":"lantern-festival","start_local":"2028-..","end_local":"..","original_expression":"原文"}]'></textarea>
+        <button>录入公告</button>
+      </form>
+      <ul id="ann-list" class="edlist"></ul>
+      <p class="hint">公告先到、活动后到也支持：场次 slug 不存在时自动创建为<b>已确认</b>实例。</p>
+    </section>
+
+    <section class="panel">
+      <h2>节庆路线（有序引用连线，同一边可被多条路线引用）</h2>
+      <form id="route-form" class="stack">
+        <input name="slug" placeholder="路线 slug" required>
+        <input name="name" placeholder="路线名称" required>
+        <input name="description" placeholder="说明">
+        <textarea name="edge_slugs" rows="2" placeholder='连线slug有序列表JSON: ["eg-metro-bus","metro-bp"]'></textarea>
+        <button>新增路线</button>
+      </form>
+      <ul id="route-list" class="edlist"></ul>
+    </section>
+  </div>
+</main>
+
+<!-- ============ ADMIN ============ -->
+<main id="view-admin" class="view" hidden>
+  <section class="panel">
+    <h2>审核与发布</h2>
+    <form id="pub-form" class="filters">
+      <input name="title" value="2027年历发布" required>
+      <input name="year" type="number" value="2027" style="width:7em">
+      <button>一键：建任务→审核→冻结→发布</button>
+    </form>
+    <div id="pub-out"></div>
+    <h3>发布任务</h3>
+    <ul id="task-list" class="edlist"></ul>
+  </section>
+  <section class="panel">
+    <h2>天气 / 施工通告（仅影响相交时空片段）</h2>
+    <form id="adv-form" class="stack">
+      <div class="row"><input name="slug" placeholder="slug" required>
+        <select name="kind"><option value="weather">天气</option>
+          <option value="construction">施工</option></select>
+        <select name="severity"><option value="info">提示</option>
+          <option value="warning">预警</option><option value="closure">封闭</option></select></div>
+      <input name="title" placeholder="标题" required>
+      <input name="scope_edges" placeholder="影响连线slug，逗号分隔，如 bp-ss-walk">
+      <div class="row"><input name="start_local" placeholder="2027-02-20T18:00">
+        <input name="end_local" placeholder="2027-02-20T19:30"></div>
+      <button>发布通告</button>
+    </form>
+    <ul id="adv-list" class="edlist"></ul>
+  </section>
+</main>
+
+<div id="toast" class="toast" hidden></div>
+<script src="js/api.js"></script>
+<script src="js/visitor.js"></script>
+<script src="js/editor.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
