@@ -1,0 +1,23 @@
+.cal-page{padding-bottom:3rem}
+.hint{color:#6b5b4a;font-size:.92rem;margin:.4rem 0}
+.cal-controls{display:flex;flex-wrap:wrap;gap:1rem;align-items:center;
+  background:rgba(139,0,0,.05);border:1px solid rgba(139,0,0,.15);border-radius:12px;padding:1rem 1.2rem;margin-bottom:1.5rem}
+.cal-controls label{display:flex;flex-direction:column;font-size:.85rem;color:#5a1e1e;gap:.3rem}
+.cal-controls select{padding:.4rem .6rem;border:1px solid #cbb9a3;border-radius:8px;background:#fffdf8;min-width:9rem}
+.btn{display:inline-block;padding:.45rem .9rem;background:#8b0000;color:#f6ead6;border-radius:8px;text-decoration:none;font-size:.9rem}
+.btn:hover{background:#a61b1b}
+.badge{font-size:.8rem;padding:.25rem .6rem;border-radius:999px;background:#f4e3c1;color:#7a5a12;border:1px solid #ddc08a}
+.badge.stale{background:#fdeaea;color:#8b0000;border-color:#e3b3b3}
+.hidden{display:none!important}
+.list-view{display:flex;flex-direction:column;gap:1.1rem}
+.day-group{border:1px solid #e4d8c6;border-radius:12px;overflow:hidden;background:#fffdf8}
+.day-head{background:linear-gradient(90deg,#8b0000,#a61b1b);color:#f6ead6;padding:.55rem 1rem;font-weight:700;letter-spacing:.05em}
+.event{padding:.8rem 1rem;border-top:1px dashed #e4d8c6;display:flex;flex-wrap:wrap;gap:.6rem;justify-content:space-between}
+.event:first-of-type{border-top:none}
+.event .t{font-weight:700;color:#3a2c20}
+.event .meta{font-size:.85rem;color:#6b5b4a}
+.src{font-size:.78rem;color:#8a6d3b}
+.tag-ver{font-size:.72rem;background:#e9f2e6;color:#3c6b33;border-radius:6px;padding:.1rem .45rem}
+.empty{color:#8b0000;text-align:center;padding:2rem}
+.map-view #mapCanvas{min-height:260px;border:1px dashed #cbb9a3;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#9a8a76;background:
+  repeating-linear-gradient(45deg,#fbf5ea,#fbf5ea 12px,#f6ecd9 12px,#f6ecd9 24px)}

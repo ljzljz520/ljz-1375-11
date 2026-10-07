@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>编辑后台 · 节庆路线与年历</title>
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/calendar.css">
+<style>
+  body{background:#f7f1e7}
+  .bar{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;background:#2c1d14;color:#f0e4d0;padding:.7rem 1rem;margin-bottom:1rem;border-radius:10px}
+  .tabs{display:flex;gap:.4rem;flex-wrap:wrap;margin:1rem 0}
+  .tabs button{background:#fffdf8;border:1px solid #cbb9a3;border-radius:8px 8px 0 0;padding:.5rem 1rem;cursor:pointer}
+  .tabs button.on{background:#8b0000;color:#f6ead6;border-color:#8b0000}
+  .panel{display:none;background:#fffdf8;border:1px solid #e4d8c6;border-radius:0 12px 12px 12px;padding:1.1rem}
+  .panel.on{display:block}
+  table{border-collapse:collapse;width:100%;font-size:.9rem}
+  th,td{border-bottom:1px solid #ecdfc9;padding:.45rem .5rem;text-align:left;vertical-align:top}
+  input,select,textarea{padding:.35rem .5rem;border:1px solid #cbb9a3;border-radius:6px;background:#fff;font-size:.9rem}
+  .row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:end;margin:.6rem 0}
+  .field{display:flex;flex-direction:column;gap:.25rem;font-size:.82rem;color:#5a1e1e}
+  .ok{color:#2f7a32}.err{color:#8b0000}.mut{color:#8a7a66;font-size:.82rem}
+  .pill{font-size:.72rem;padding:.1rem .45rem;border-radius:6px;background:#eee2cd}
+  .pill.archived{background:#f3d7d7;color:#8b0000}
+  .pill.published{background:#dff0da;color:#2f7a32}
+  .conflict{background:#fdeaea;border:1px solid #e3b3b3;border-radius:8px;padding:.6rem;margin:.5rem 0}
+  code{background:#f1e7d4;padding:.05rem .3rem;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="container" style="max-width:1100px">
+  <h2>节庆路线与年历 · 编辑后台</h2>
+  <div class="bar">
+    <strong>角色</strong>
+    <select id="roleSel">
+      <option value="editor">编辑 editor</option>
+      <option value="reviewer">审核 reviewer</option>
+      <option value="publisher">发布 publisher</option>
+      <option value="visitor">访客 visitor（只读）</option>
+    </select>
+    <span class="mut">乐观锁：两个编辑同时改一条连线，后保存者会收到 409，并显示最新版本。</span>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button data-tab="nodes" class="on">仪式节点</button>
+    <button data-tab="edges">交通连线</button>
+    <button data-tab="plan">路线计算</button>
+    <button data-tab="instances">年度实例</button>
+    <button data-tab="ann">公告审核</button>
+    <button data-tab="art">历史文章</button>
+    <button data-tab="release">发布任务</button>
+  </div>
+
+  <!-- 节点 -->
+  <section class="panel on" id="panel-nodes">
+    <div class="row">
+      <div class="field">名称<input id="nName"></div>
+      <div class="field">类型<select id="nKind"><option value="ritual">仪式节点</option><option value="transfer">交通换乘</option><option value="hub">集散点</option></select></div>
+      <div class="field">开放起 HH:MM<input id="nOpen" placeholder="如 19:00"></div>
+      <div class="field">开放止 HH:MM<input id="nClose" placeholder="如 02:00=跨午夜"></div>
+      <div class="field">时区<input id="nTz" value="Asia/Shanghai"></div>
+      <div class="field">原始表达<input id="nRaw" placeholder="公告原文的开放时间"></div>
+      <button class="btn" onclick="App.createNode()">新增节点</button>
+    </div>
+    <p class="mut">留空开放窗口 = 全天可达（交通换乘点）。结束≤开始表示跨午夜，时区与原始表达原样保存。</p>
+    <table><thead><tr><th>ID/名称</th><th>窗口（原文）</th><th>版本</th><th>状态</th><th>操作</th></tr></thead>
+    <tbody id="nodesBody"></tbody></table>
+  </section>
+
+  <!-- 连线 -->
+  <section class="panel" id="panel-edges">
+    <div class="row">
+      <div class="field">起点<select id="eFrom"></select></div>
+      <div class="field">终点<select id="eTo"></select></div>
+      <div class="field">方式<input id="eMode" value="walk"></div>
+      <div class="field">耗时(分)<input id="eMin" type="number" value="20"></div>
+      <button class="btn" onclick="App.createEdge()">新增连线</button>
+    </div>
+    <div id="edgeConflict"></div>
+    <table><thead><tr><th>边</th><th>方式</th><th>耗时</th><th>版本</th><th>操作</th></tr></thead>
+    <tbody id="edgesBody"></tbody></table>
+  </section>
+
+  <!-- 路线计算 -->
+  <section class="panel" id="panel-plan">
+    <div class="row">
+      <div class="field">起点<select id="pOrigin"></select></div>
+      <div class="field">终点<select id="pDest"></select></div>
+      <div class="field">日期<input id="pDate" value="2027-02-20"></div>
+      <div class="field">时刻<input id="pTime" value="18:00"></div>
+      <div class="field">偏好方式<input id="pModes" placeholder="metro,walk（留空=不限）"></div>
+      <div class="field">必经节点<select id="pRequire"></select></div>
+    </div>
+    <div class="row">
+      <button class="btn" onclick="App.earliest()">求最早到达</button>
+      <button class="btn" onclick="App.compare()">比较最早 vs 偏好</button>
+    </div>
+    <div id="planOut"></div>
+  </section>
+
+  <!-- 实例 -->
+  <section class="panel" id="panel-instances">
+    <h3>年度活动实例（日期逐年、来源确认）</h3>
+    <div class="row">
+      <div class="field">年份<input id="iYear" type="number" value="2027" style="width:6rem"></div>
+      <div class="field">标题<input id="iTitle"></div>
+      <div class="field">节点<select id="iNode"></select></div>
+      <div class="field">日期<input id="iDate" placeholder="YYYY-MM-DD"></div>
+      <div class="field">时刻<input id="iTime" placeholder="HH:MM"></div>
+      <div class="field">时区<input id="iTz" value="Asia/Shanghai"></div>
+      <div class="field">原始表达<input id="iRaw"></div>
+      <div class="field">来源 URL<input id="iSrc" placeholder="组织方公告链接（必填）"></div>
+      <button class="btn" onclick="App.createInstance()">新建实例（未确认）</button>
+    </div>
+    <p class="err" id="iWarn"></p>
+    <table><thead><tr><th>年份/标题</th><th>日期（原文/时区）</th><th>来源</th><th>状态</th><th>操作</th></tr></thead>
+    <tbody id="instBody"></tbody></table>
+  </section>
+
+  <!-- 公告 -->
+  <section class="panel" id="panel-ann">
+    <h3>公告（公告可先到，活动后到再挂接）</h3>
+    <div class="row">
+      <div class="field">标题<input id="aTitle"></div>
+      <div class="field">类型<select id="aKind"><option value="festival">节庆</option><option value="weather">天气</option><option value="construction">施工</option><option value="notice">一般</option></select></div>
+      <div class="field">来源 URL<input id="aSrc"></div>
+      <button class="btn" onclick="App.createAnn()">新建公告（草稿）</button>
+    </div>
+    <table><thead><tr><th>标题</th><th>类型</th><th>状态</th><th>操作</th></tr></thead>
+    <tbody id="annBody"></tbody></table>
+  </section>
+
+  <!-- 文章 -->
+  <section class="panel" id="panel-art">
+    <h3>历史文章（发布即冻结，不随当前公告改写）</h3>
+    <div class="row">
+      <div class="field">slug<input id="arSlug"></div>
+      <div class="field">标题<input id="arTitle"></div>
+      <div class="field">正文<textarea id="arBody" rows="2" style="min-width:20rem"></textarea></div>
+      <button class="btn" onclick="App.createArticle()">新建文章</button>
+    </div>
+    <table><thead><tr><th>标题</th><th>状态</th><th>冻结于</th><th>操作</th></tr></thead>
+    <tbody id="artBody"></tbody></table>
+  </section>
+
+  <!-- 发布 -->
+  <section class="panel" id="panel-release">
+    <h3>发布任务（冻结节点与公告版本；未确认实例不纳入）</h3>
+    <div class="row">
+      <div class="field">年份<input id="relYear" type="number" value="2027" style="width:6rem"></div>
+      <div class="field">名称<input id="relName" value="2027 上元节年历"></div>
+      <button class="btn" onclick="App.publish()">发布新年历版本</button>
+    </div>
+    <div id="relOut"></div>
+  </section>
+</div>
+
+<script src="/public/js/app.js"></script>
+</body>
+</html>

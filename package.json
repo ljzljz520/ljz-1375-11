@@ -1,0 +1,13 @@
+{
+  "name": "xian-cultural-station-festival-calendar",
+  "version": "1.0.0",
+  "description": "西安长兴坊文化站：节庆路线（有向图+开放窗口）与年度年历（来源确认/审核发布/冻结）",
+  "private": true,
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node server/index.js",
+    "seed": "node server/seed.js",
+    "test": "node test/acceptance.js"
+  },
+  "license": "MIT"
+}

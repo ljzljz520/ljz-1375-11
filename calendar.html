@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>节庆年历 · 西安长兴坊文化站</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/calendar.css">
+</head>
+<body>
+<header>
+  <div class="container">
+    <nav>
+      <div class="logo">西安·长兴坊</div>
+      <ul>
+        <li><a href="index.html">历史背景</a></li>
+        <li><a href="activities.html">民俗活动</a></li>
+        <li><a href="travel.html">旅游指南</a></li>
+        <li><a class="active" href="calendar.html">节庆年历</a></li>
+        <li><a href="app/">编辑后台</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="container cal-page">
+  <section class="section-title"><h2 id="calTitle">节庆年历</h2>
+    <p class="hint">节庆日期以组织方逐年公告为准；未经来源确认的日期不会出现在年历中。时间标注保留原始表达与时区。</p>
+  </section>
+
+  <section class="cal-controls">
+    <label>年份
+      <select id="yearSel"></select>
+    </label>
+    <label>仪式节点
+      <select id="nodeSel"><option value="">全部节点</option></select>
+    </label>
+    <label>视图
+      <select id="viewSel">
+        <option value="list">列表</option>
+        <option value="map">地图</option>
+      </select>
+    </label>
+    <a id="shareLink" class="btn" href="#" target="_blank" rel="noopener">复制/分享深链</a>
+    <span id="cacheBadge" class="badge hidden"></span>
+  </section>
+
+  <section id="listView" class="list-view"></section>
+  <section id="mapView" class="map-view hidden">
+    <p class="hint">地图视图（示意）：列表为默认与无障碍替代。</p>
+    <div id="mapCanvas"></div>
+  </section>
+  <p id="emptyTip" class="empty hidden">当前筛选条件下没有已确认的活动。</p>
+</main>
+
+<footer><div class="container">
+  <p>&copy; 2026 西安文化推广中心 · 年历版本 <span id="verLabel">–</span></p>
+</div></footer>
+
+<script src="public/js/calendar-core.js"></script>
+<script src="js/calendar.js"></script>
+</body>
+</html>
